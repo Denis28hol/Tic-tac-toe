@@ -3,65 +3,157 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tic-Tac-Toe</title>
+  <title>Крестики — Нолики (Tic-Tac-Toe)</title>
   <style>
-    :root{--bg:#0f172a;--card:#0b1220;--accent:#06b6d4;--muted:#94a3b8;--win:#16a34a}
+    :root{
+      --bg1: #0f0c29;
+      --bg2: #302b63;
+      --accent1: #00f5a0;
+      --accent2: #00d2ff;
+      --card: rgba(255,255,255,0.04);
+      --muted: #b6c0ce;
+      --win: #7CFC00;
+      --glass: rgba(255,255,255,0.03);
+    }
     *{box-sizing:border-box}
-    body{font-family:Inter, system-ui, Arial; margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#071029, #001219); color:#e6eef6}
-    .container{width:min(480px,95vw); background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); padding:20px;border-radius:12px; box-shadow:0 6px 24px rgba(2,6,23,0.7)}
-    h1{margin:0 0 8px;font-size:20px;text-align:center}
-    .meta{display:flex;gap:12px;justify-content:space-between;align-items:center;margin-bottom:12px}
-    .score{display:flex;gap:10px;align-items:center}
-    .badge{background:rgba(255,255,255,0.02);padding:6px 10px;border-radius:999px;font-weight:600;color:var(--muted)}
-    .board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:rgba(255,255,255,0.01);padding:8px;border-radius:8px}
-    .cell{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:48px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.0));border-radius:8px;cursor:pointer;user-select:none;transition:transform .08s ease, background .12s}
-    .cell:hover{transform:translateY(-3px)}
-    .controls{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:12px}
-    button{background:var(--accent);border:none;padding:8px 12px;border-radius:8px;color:#022;cursor:pointer;font-weight:700}
-    .small{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:6px 8px;color:var(--muted);font-weight:600}
-    .message{margin-top:10px;text-align:center;color:var(--muted)}
-    .win-line{position:absolute;pointer-events:none}
-    .footer{margin-top:12px;text-align:center;color:var(--muted);font-size:13px}
-    @media (max-width:420px){.cell{font-size:36px}}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter, system-ui, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(0,210,255,0.08), transparent),
+                  linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
+      display:flex; align-items:center; justify-content:center;
+      color:#f3f7fb;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    .container{
+      width:min(640px,96vw);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:18px; padding:22px; box-shadow:0 10px 40px rgba(2,6,23,0.6);
+      border: 1px solid rgba(255,255,255,0.03);
+      display:grid; gap:12px;
+    }
+
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    h1{margin:0;font-size:20px;letter-spacing:0.6px; color: #fff}
+    .sub { color:var(--muted); font-size:13px }
+
+    .meta{display:flex; gap:12px; align-items:center}
+    .score{display:flex; gap:10px; align-items:center}
+    .badge{
+      background:var(--card); padding:8px 12px; border-radius:999px; font-weight:700;
+      color:var(--muted); min-width:74px; text-align:center;
+      display:inline-flex; justify-content:center; align-items:center; gap:8px;
+      border: 1px solid rgba(255,255,255,0.02); transition:transform .14s, box-shadow .14s, color .14s;
+    }
+    .badge strong{color:#fff}
+    .badge.active{ color: #012; background: linear-gradient(90deg,var(--accent1),var(--accent2)); box-shadow:0 6px 20px rgba(0,210,255,0.08); transform:translateY(-3px) }
+
+    .board-wrap{display:flex; gap:18px; align-items:center; justify-content:center; flex-wrap:wrap}
+    .board{
+      display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;
+      width:min(420px,60vw);
+    }
+
+    .cell{
+      aspect-ratio:1/1; display:flex; align-items:center; justify-content:center;
+      border-radius:12px; font-size:48px; font-weight:800; cursor:pointer; user-select:none;
+      background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.005));
+      color: #e9f9f0; transition:transform .14s, box-shadow .14s, background .18s, color .14s;
+      box-shadow: 0 6px 18px rgba(2,6,23,0.45), inset 0 -6px 18px rgba(255,255,255,0.01);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .cell:hover{ transform: translateY(-6px) scale(1.02) }
+    .cell.filled{ animation: pop .18s ease both; }
+    @keyframes pop { from { transform: scale(.3); opacity:0 } to { transform: scale(1); opacity:1 } }
+
+    .cell.disabled{ cursor:not-allowed; opacity:0.78; transform:none; }
+    .cell.win{
+      background: linear-gradient(90deg, rgba(124,252,0,0.15), rgba(0,210,255,0.06));
+      box-shadow: 0 10px 28px rgba(0,210,255,0.12), 0 0 28px rgba(124,252,0,0.12) inset;
+      animation: glow 900ms ease infinite alternate;
+      color:#012;
+    }
+    @keyframes glow {
+      from { box-shadow: 0 8px 20px rgba(0,210,255,0.08) , 0 0 20px rgba(124,252,0,0.06) inset }
+      to   { box-shadow: 0 14px 34px rgba(0,210,255,0.14) , 0 0 36px rgba(124,252,0,0.12) inset }
+    }
+
+    .controls{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap }
+    .btn{
+      padding:10px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:800;
+      background: linear-gradient(90deg,var(--accent2),var(--accent1)); color:#012;
+      box-shadow: 0 8px 18px rgba(0,210,255,0.08);
+    }
+    .btn.ghost{
+      background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.04);
+      font-weight:700;
+    }
+
+    .message{ text-align:center; color:var(--muted); font-weight:700; padding:6px 0 }
+    .footer{ font-size:13px; color:var(--muted); text-align:center }
+
+    /* responsive */
+    @media (max-width:560px){
+      .container{ padding:16px }
+      .cell{ font-size:40px; border-radius:10px }
+      .board{ gap:8px }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Крестики — Нолики</h1>
-    <div class="meta">
-      <div class="score">
-        <div class="badge">Х: <span id="scoreX">0</span></div>
-        <div class="badge">O: <span id="scoreO">0</span></div>
-        <div class="badge">Нічиї: <span id="scoreD">0</span></div>
+  <div class="container" role="application" aria-label="Tic Tac Toe game">
+    <header>
+      <div>
+        <h1>Крестики — Нолики</h1>
+        <div class="sub">Два гравці на одному комп'ютері • Покращений дизайн</div>
       </div>
-      <div class="badge">Хід: <strong id="turn">X</strong></div>
+      <div class="meta">
+        <div class="score" aria-hidden="false">
+          <div id="badgeX" class="badge"><span>Х</span> <strong id="scoreX">0</strong></div>
+          <div id="badgeO" class="badge"><span>O</span> <strong id="scoreO">0</strong></div>
+          <div class="badge">Нічиї: <strong id="scoreD">0</strong></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="board-wrap">
+      <div class="board" id="board" aria-label="Ігрове поле"></div>
+
+      <div style="min-width:160px; display:flex; flex-direction:column; gap:8px; align-items:center;">
+        <div class="badge" style="min-width:140px">Хід: <strong id="turn">X</strong></div>
+        <div style="width:100%; display:flex; flex-direction:column; gap:8px;">
+          <button id="reset" class="btn" aria-label="Нова гра">🔄 Нова гра</button>
+          <button id="clearScores" class="btn ghost" aria-label="Скинути рахунок">Скинути рахунок</button>
+        </div>
+      </div>
     </div>
 
-    <div id="board" class="board" aria-label="Game board">
-      <!-- 9 cells inserted by JS -->
-    </div>
+    <div id="message" class="message">Натисніть на клітинку, щоб зробити хід.</div>
 
-    <div class="controls">
-      <button id="reset">Нова гра</button>
-      <button id="clearScores" class="small">Скинути рахунок</button>
+    <div class="footer">
+      <a href="https://github.com/Denis28hol/Tic-tac-toe" target="_blank" style="color:inherit;text-decoration:underline">GitHub репозиторій</a>
     </div>
-
-    <div class="message" id="message">Два гравці на одному комп'ютері. Натисніть клітинку, щоб зробити хід.</div>
-    <div class="footer">Збережіть цей файл як <code>index.html</code> і відкрийте в браузері. Можна запушити на GitHub.</div>
   </div>
 
   <script>
+    // Elements
     const boardEl = document.getElementById('board');
     const turnEl = document.getElementById('turn');
     const msgEl = document.getElementById('message');
-    const scoreX = document.getElementById('scoreX');
-    const scoreO = document.getElementById('scoreO');
-    const scoreD = document.getElementById('scoreD');
+    const scoreXEl = document.getElementById('scoreX');
+    const scoreOEl = document.getElementById('scoreO');
+    const scoreDEl = document.getElementById('scoreD');
+    const badgeX = document.getElementById('badgeX');
+    const badgeO = document.getElementById('badgeO');
+    const resetBtn = document.getElementById('reset');
+    const clearBtn = document.getElementById('clearScores');
 
+    // State
     let board = Array(9).fill(null);
     let turn = 'X';
     let gameOver = false;
-    let scores = {X:0, O:0, D:0};
+    let scores = { X: 0, O: 0, D: 0 };
 
     const wins = [
       [0,1,2],[3,4,5],[6,7,8],
@@ -69,22 +161,55 @@
       [0,4,8],[2,4,6]
     ];
 
-    function renderBoard(){
-      boardEl.innerHTML = '';
-      board.forEach((val, idx)=>{
-        const cell = document.createElement('div');
-        cell.className = 'cell';
-        cell.dataset.idx = idx;
-        cell.textContent = val || '';
-        cell.addEventListener('click', onCellClick);
-        boardEl.appendChild(cell);
-      });
+    // Local storage for scores
+    const SCORES_KEY = 'ttt_scores_v1';
+    function loadScores(){
+      try{
+        const raw = localStorage.getItem(SCORES_KEY);
+        if(raw){
+          const parsed = JSON.parse(raw);
+          if(parsed && typeof parsed === 'object'){
+            scores = Object.assign(scores, parsed);
+          }
+        }
+      }catch(e){ /* ignore */ }
+      renderScores();
+    }
+    function saveScores(){
+      try{ localStorage.setItem(SCORES_KEY, JSON.stringify(scores)); }catch(e){}
     }
 
+    // Render
+    function renderBoard(){
+      boardEl.innerHTML = '';
+      board.forEach((val, idx) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell' + (val ? ' filled' : '');
+        cell.tabIndex = 0;
+        cell.dataset.idx = idx;
+        cell.setAttribute('role','button');
+        cell.setAttribute('aria-label', `Cell ${idx+1}, ${val ? val : 'empty'}`);
+        cell.textContent = val || '';
+        // click & keyboard
+        cell.addEventListener('click', onCellClick);
+        cell.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onCellClick(e); }});
+        if(gameOver || val) cell.classList.add('disabled');
+        boardEl.appendChild(cell);
+      });
+      updateTurnDisplay();
+    }
+
+    function renderScores(){
+      scoreXEl.textContent = scores.X;
+      scoreOEl.textContent = scores.O;
+      scoreDEl.textContent = scores.D;
+    }
+
+    // Gameplay
     function onCellClick(e){
-      const i = Number(e.currentTarget.dataset.idx);
-      if(gameOver || board[i]) return;
-      board[i] = turn;
+      const idx = Number(e.currentTarget.dataset.idx);
+      if(gameOver || board[idx]) return;
+      board[idx] = turn;
       renderBoard();
       const winner = checkWinner();
       if(winner){
@@ -92,18 +217,21 @@
         if(winner === 'D'){
           msgEl.textContent = 'Нічия!';
           scores.D++;
-          scoreD.textContent = scores.D;
         } else {
           msgEl.textContent = `Переміг ${winner}!`;
           scores[winner]++;
-          if(winner === 'X') scoreX.textContent = scores.X; else scoreO.textContent = scores.O;
+          highlightWin(winner);
         }
-        highlightWin(winner);
+        renderScores();
+        saveScores();
+        // disable remaining cells visually
+        document.querySelectorAll('.cell').forEach(c=>c.classList.add('disabled'));
         return;
       }
+      // next turn
       turn = turn === 'X' ? 'O' : 'X';
-      turnEl.textContent = turn;
       msgEl.textContent = `Хід гравця ${turn}`;
+      renderBoard();
     }
 
     function checkWinner(){
@@ -117,34 +245,39 @@
     }
 
     function highlightWin(winner){
-      if(winner === 'D') return;
-      // simple highlight by coloring winning cells
       for(const [a,b,c] of wins){
         if(board[a] && board[a] === board[b] && board[a] === board[c]){
           const cells = boardEl.querySelectorAll('.cell');
-          [a,b,c].forEach(i=>{
-            cells[i].style.background = 'linear-gradient(90deg, rgba(6,182,212,0.12), rgba(16,185,129,0.06))';
-            cells[i].style.boxShadow = 'inset 0 -4px 14px rgba(0,0,0,0.35)';
-          });
+          [a,b,c].forEach(i=>cells[i].classList.add('win'));
         }
       }
     }
 
-    document.getElementById('reset').addEventListener('click', ()=>{
+    function updateTurnDisplay(){
+      turnEl.textContent = turn;
+      badgeX.classList.toggle('active', turn === 'X');
+      badgeO.classList.toggle('active', turn === 'O');
+    }
+
+    // Controls
+    resetBtn.addEventListener('click', ()=>{
       board = Array(9).fill(null);
       turn = 'X';
-      turnEl.textContent = turn;
       gameOver = false;
-      msgEl.textContent = 'Нова гра. Хід X.';
+      msgEl.textContent = 'Нова гра. Натисніть на клітинку, щоб почати.';
+      // clear win highlights
+      document.querySelectorAll('.cell.win').forEach(c=>c.classList.remove('win'));
       renderBoard();
     });
 
-    document.getElementById('clearScores').addEventListener('click', ()=>{
-      scores = {X:0,O:0,D:0};
-      scoreX.textContent = 0; scoreO.textContent = 0; scoreD.textContent = 0;
+    clearBtn.addEventListener('click', ()=>{
+      scores = { X:0, O:0, D:0 };
+      saveScores();
+      renderScores();
     });
 
-    // initial render
+    // init
+    loadScores();
     renderBoard();
   </script>
 </body>
