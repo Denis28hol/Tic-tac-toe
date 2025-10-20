@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tic-Tac-Toe</title>
+  <style>
+    :root{--bg:#0f172a;--card:#0b1220;--accent:#06b6d4;--muted:#94a3b8;--win:#16a34a}
+    *{box-sizing:border-box}
+    body{font-family:Inter, system-ui, Arial; margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#071029, #001219); color:#e6eef6}
+    .container{width:min(480px,95vw); background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); padding:20px;border-radius:12px; box-shadow:0 6px 24px rgba(2,6,23,0.7)}
+    h1{margin:0 0 8px;font-size:20px;text-align:center}
+    .meta{display:flex;gap:12px;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .score{display:flex;gap:10px;align-items:center}
+    .badge{background:rgba(255,255,255,0.02);padding:6px 10px;border-radius:999px;font-weight:600;color:var(--muted)}
+    .board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:rgba(255,255,255,0.01);padding:8px;border-radius:8px}
+    .cell{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:48px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.0));border-radius:8px;cursor:pointer;user-select:none;transition:transform .08s ease, background .12s}
+    .cell:hover{transform:translateY(-3px)}
+    .controls{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:12px}
+    button{background:var(--accent);border:none;padding:8px 12px;border-radius:8px;color:#022;cursor:pointer;font-weight:700}
+    .small{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:6px 8px;color:var(--muted);font-weight:600}
+    .message{margin-top:10px;text-align:center;color:var(--muted)}
+    .win-line{position:absolute;pointer-events:none}
+    .footer{margin-top:12px;text-align:center;color:var(--muted);font-size:13px}
+    @media (max-width:420px){.cell{font-size:36px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Крестики — Нолики</h1>
+    <div class="meta">
+      <div class="score">
+        <div class="badge">Х: <span id="scoreX">0</span></div>
+        <div class="badge">O: <span id="scoreO">0</span></div>
+        <div class="badge">Нічиї: <span id="scoreD">0</span></div>
+      </div>
+      <div class="badge">Хід: <strong id="turn">X</strong></div>
+    </div>
+
+    <div id="board" class="board" aria-label="Game board">
+      <!-- 9 cells inserted by JS -->
+    </div>
+
+    <div class="controls">
+      <button id="reset">Нова гра</button>
+      <button id="clearScores" class="small">Скинути рахунок</button>
+    </div>
+
+    <div class="message" id="message">Два гравці на одному комп'ютері. Натисніть клітинку, щоб зробити хід.</div>
+    <div class="footer">Збережіть цей файл як <code>index.html</code> і відкрийте в браузері. Можна запушити на GitHub.</div>
+  </div>
+
+  <script>
+    const boardEl = document.getElementById('board');
+    const turnEl = document.getElementById('turn');
+    const msgEl = document.getElementById('message');
+    const scoreX = document.getElementById('scoreX');
+    const scoreO = document.getElementById('scoreO');
+    const scoreD = document.getElementById('scoreD');
+
+    let board = Array(9).fill(null);
+    let turn = 'X';
+    let gameOver = false;
+    let scores = {X:0, O:0, D:0};
+
+    const wins = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
+
+    function renderBoard(){
+      boardEl.innerHTML = '';
+      board.forEach((val, idx)=>{
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.idx = idx;
+        cell.textContent = val || '';
+        cell.addEventListener('click', onCellClick);
+        boardEl.appendChild(cell);
+      });
+    }
+
+    function onCellClick(e){
+      const i = Number(e.currentTarget.dataset.idx);
+      if(gameOver || board[i]) return;
+      board[i] = turn;
+      renderBoard();
+      const winner = checkWinner();
+      if(winner){
+        gameOver = true;
+        if(winner === 'D'){
+          msgEl.textContent = 'Нічия!';
+          scores.D++;
+          scoreD.textContent = scores.D;
+        } else {
+          msgEl.textContent = `Переміг ${winner}!`;
+          scores[winner]++;
+          if(winner === 'X') scoreX.textContent = scores.X; else scoreO.textContent = scores.O;
+        }
+        highlightWin(winner);
+        return;
+      }
+      turn = turn === 'X' ? 'O' : 'X';
+      turnEl.textContent = turn;
+      msgEl.textContent = `Хід гравця ${turn}`;
+    }
+
+    function checkWinner(){
+      for(const [a,b,c] of wins){
+        if(board[a] && board[a] === board[b] && board[a] === board[c]){
+          return board[a];
+        }
+      }
+      if(board.every(Boolean)) return 'D';
+      return null;
+    }
+
+    function highlightWin(winner){
+      if(winner === 'D') return;
+      // simple highlight by coloring winning cells
+      for(const [a,b,c] of wins){
+        if(board[a] && board[a] === board[b] && board[a] === board[c]){
+          const cells = boardEl.querySelectorAll('.cell');
+          [a,b,c].forEach(i=>{
+            cells[i].style.background = 'linear-gradient(90deg, rgba(6,182,212,0.12), rgba(16,185,129,0.06))';
+            cells[i].style.boxShadow = 'inset 0 -4px 14px rgba(0,0,0,0.35)';
+          });
+        }
+      }
+    }
+
+    document.getElementById('reset').addEventListener('click', ()=>{
+      board = Array(9).fill(null);
+      turn = 'X';
+      turnEl.textContent = turn;
+      gameOver = false;
+      msgEl.textContent = 'Нова гра. Хід X.';
+      renderBoard();
+    });
+
+    document.getElementById('clearScores').addEventListener('click', ()=>{
+      scores = {X:0,O:0,D:0};
+      scoreX.textContent = 0; scoreO.textContent = 0; scoreD.textContent = 0;
+    });
+
+    // initial render
+    renderBoard();
+  </script>
+</body>
+</html>
